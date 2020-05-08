@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Public/Room.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AProceduralMapsCharacter
@@ -76,6 +77,20 @@ void AProceduralMapsCharacter::SetupPlayerInputComponent(class UInputComponent* 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AProceduralMapsCharacter::OnResetVR);
 }
 
+// spawn
+void AProceduralMapsCharacter::SpawnCubes()
+{
+	if (SpawningRoom)
+	{
+		FActorSpawnParameters tParams;
+		tParams.Owner = this;
+
+		FRotator rot;
+		FVector loc = GetActorLocation() + GetActorForwardVector() * 30;
+
+		GetWorld()->SpawnActor<ARoom>(SpawningRoom, loc, rot, tParams);
+	}
+}
 
 void AProceduralMapsCharacter::OnResetVR()
 {

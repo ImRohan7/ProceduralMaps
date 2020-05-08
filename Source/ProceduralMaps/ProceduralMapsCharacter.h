@@ -68,5 +68,15 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+
+	///////////////////////////////////////
+public:
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ARoom> SpawningRoom;
+
+	UFUNCTION(BlueprintCallable)
+		void SpawnCubes();
 };
 
