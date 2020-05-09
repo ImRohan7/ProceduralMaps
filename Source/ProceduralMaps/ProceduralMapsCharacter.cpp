@@ -10,6 +10,9 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Public/Room.h"
 
+////////////////////////////////////
+#include "Tools/Generator.h"
+
 //////////////////////////////////////////////////////////////////////////
 // AProceduralMapsCharacter
 
@@ -77,18 +80,35 @@ void AProceduralMapsCharacter::SetupPlayerInputComponent(class UInputComponent* 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AProceduralMapsCharacter::OnResetVR);
 }
 
-// spawn
-void AProceduralMapsCharacter::SpawnCubes()
+// spawn rooms
+void AProceduralMapsCharacter::SpawnRooms()
 {
-	if (SpawningRoom)
+			UE_LOG(LogTemp, Warning, TEXT("Spawn.............."));
+	if (m_SpawningRoom)
 	{
-		FActorSpawnParameters tParams;
-		tParams.Owner = this;
+		for (int i = 0; i < 10; i++)
+		{
+			//spawn
+			FActorSpawnParameters tParams;
+			tParams.Owner = this;
+			FRotator rot;
+			//FVector loc = GetActorLocation() + GetActorForwardVector() * 30;
+			FVector loc = GetActorLocation() + Helpers::Generator::getRandomPointInCircle(500);
+			ARoom* rm = GetWorld()->SpawnActor<ARoom>(m_SpawningRoom, loc, rot, tParams);
+			
+			// random scale
+			FVector scale(FMath::RandRange(10, RoomRange),
+				FMath::RandRange(10, RoomRange),
+				FMath::RandRange(0, 10));
 
-		FRotator rot;
-		FVector loc = GetActorLocation() + GetActorForwardVector() * 30;
+			rm->SetActorScale3D(scale);
 
-		GetWorld()->SpawnActor<ARoom>(SpawningRoom, loc, rot, tParams);
+			m_Rooms.Add(rm);
+		}
+	}
+	else // impoertant Error Logging
+	{
+		UE_LOG(LogTemp, Error, TEXT("No Actor found while spawning."));
 	}
 }
 

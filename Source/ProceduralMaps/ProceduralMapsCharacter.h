@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "ProceduralMapsCharacter.generated.h"
 
+class ARoom;
+
 UCLASS(config=Game)
 class AProceduralMapsCharacter : public ACharacter
 {
@@ -73,10 +75,15 @@ public:
 	///////////////////////////////////////
 public:
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
+		int RoomRange;
+
+	TArray<ARoom*> m_Rooms;
+
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ARoom> SpawningRoom;
+	TSubclassOf<class ARoom> m_SpawningRoom;
 
 	UFUNCTION(BlueprintCallable)
-		void SpawnCubes();
+		void SpawnRooms();
 };
 
