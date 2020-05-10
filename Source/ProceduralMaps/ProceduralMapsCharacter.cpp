@@ -83,7 +83,7 @@ void AProceduralMapsCharacter::SetupPlayerInputComponent(class UInputComponent* 
 // spawn rooms
 void AProceduralMapsCharacter::SpawnRooms()
 {
-			UE_LOG(LogTemp, Warning, TEXT("Spawn.............."));
+	UE_LOG(LogTemp, Warning, TEXT("Spawn.............."));
 	if (m_SpawningRoom)
 	{
 		for (int i = 0; i < 10; i++)
@@ -95,7 +95,9 @@ void AProceduralMapsCharacter::SpawnRooms()
 			//FVector loc = GetActorLocation() + GetActorForwardVector() * 30;
 			FVector loc = GetActorLocation() + Helpers::Generator::getRandomPointInCircle(500);
 			ARoom* rm = GetWorld()->SpawnActor<ARoom>(m_SpawningRoom, loc, rot, tParams);
-			
+
+			UE_LOG(LogTemp, Warning, TEXT("After Spawn"));
+
 			// random scale
 			FVector scale(FMath::RandRange(10, RoomRange),
 				FMath::RandRange(10, RoomRange),
@@ -110,6 +112,14 @@ void AProceduralMapsCharacter::SpawnRooms()
 	{
 		UE_LOG(LogTemp, Error, TEXT("No Actor found while spawning."));
 	}
+
+	// simulate
+	for (auto rm : m_Rooms)
+	{
+		if(rm)
+			rm->SetSimulatePhysicsForAll(true);
+	}
+
 }
 
 void AProceduralMapsCharacter::OnResetVR()

@@ -23,4 +23,19 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+
+//	UPROPERTY(VisibleAnywhere) // visible in component hierarchy
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (DisplayName = "Location Scene Coponent"))
+		USceneComponent* SceneComponent;
+
+	// visible in variables section
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (DisplayName = "RoomBlockName"))
+		UStaticMeshComponent* MeshCube;
+
+	//**********************************************************
+	// Functions
+	UFUNCTION(BlueprintCallable)
+		void SetSimulatePhysicsForAll(bool state);
+
+
 };
