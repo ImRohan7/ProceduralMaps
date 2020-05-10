@@ -3,6 +3,8 @@
 #include "Public/Room.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
+#include "Delegate.h"
+#include "Components/BoxComponent.h"
 
 // Sets default values
 ARoom::ARoom()
@@ -15,12 +17,11 @@ ARoom::ARoom()
 
 	MeshCube = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RoomBlock"));
 	SetRootComponent(MeshCube);
-
-	//	MeshCube->SetupAttachment(RootComponent);
-//	UStaticMesh* m = FObjecfinder
-
-	//MeshCube->SetStaticMesh();
-	//UE_LOG(LogTemp, Warning, TEXT("Room Constructor"));
+//	MeshCube->OnComponentBeginOverlap.AddDynamic(this, &ARoom::OnOverla);
+	MeshCube->OnComponentEndOverlap.AddDynamic(this, &ARoom::OnBeginOverlap);
+	UBoxComponent* m_triggerCaptain;
+	//m_triggerCaptain->OnComponentBeginOverlap.add
+//UE_LOG(LogTemp, Warning, TEXT("Room Constructor"));
 }
 
 // Called when the game starts or when spawned
@@ -42,5 +43,7 @@ void ARoom::Tick(float DeltaTime)
 void ARoom::SetSimulatePhysicsForAll(bool state)
 {
 	MeshCube->SetSimulatePhysics(state); 
+
+	
 }
 

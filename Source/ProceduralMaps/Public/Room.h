@@ -37,5 +37,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void SetSimulatePhysicsForAll(bool state);
 
+	UFUNCTION()
+		void OnBeginOverlap(class UPrimitiveComponent* OverlappedComponent,class AActor* OtherActor,class UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+//	void OnOverlap(AActor* MyOverlappedActor, AActor* OtherActor);
 
 };

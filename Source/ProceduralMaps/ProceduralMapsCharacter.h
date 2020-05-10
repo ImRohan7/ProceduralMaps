@@ -78,6 +78,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
 		int RoomRange;
 
+	UPROPERTY(VisibleAnywhere)
 	TArray<ARoom*> m_Rooms;
 
 	UPROPERTY(EditAnywhere)
