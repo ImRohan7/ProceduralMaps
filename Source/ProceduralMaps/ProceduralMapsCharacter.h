@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+///////////////////////////////
+#include "Tools/DelTraingle/vector2.h"
+
 #include "ProceduralMapsCharacter.generated.h"
 
 class ARoom;
@@ -64,6 +67,8 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+	
+	virtual void BeginPlay() override;
 
 public:
 	/** Returns CameraBoom subobject **/
@@ -71,20 +76,45 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	virtual void Tick(float deltaTime) override;
 
 	///////////////////////////////////////
+	// User defined
+	
 public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
 		int RoomRange;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
+		int m_TotalRoomsToSpawn;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Timer)
+		FTimerHandle m_TimerGenerateDT;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Timer)
+		float m_TimeForMoveRooms;
+
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<ARoom*> m_Rooms;
-
+	// main rooms
+	TArray<ARoom*> m_RoomsMain;
+	// pair with loc and and room for triangle
+	TMap<FVector2D, ARoom*> m_RoomLocMap;
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ARoom> m_SpawningRoom;
 
 	UFUNCTION(BlueprintCallable)
 		void SpawnRooms();
+
+	UFUNCTION(BlueprintCallable)
+		void HighlightMainRooms();
+
+	UFUNCTION()
+		void OnTimerEnd();
+
+	void generateDT();
 };
 

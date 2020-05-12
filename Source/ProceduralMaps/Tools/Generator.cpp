@@ -12,6 +12,7 @@ namespace Helpers {
 
 		res.X = r * cos(theta);
 		res.Y = r * sin(theta);
+		//res.Z = 0;
 
 		return res;
 	}
