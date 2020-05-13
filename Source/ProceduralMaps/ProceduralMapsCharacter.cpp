@@ -16,6 +16,7 @@
 #include "Tools/DelTraingle/vector2.h"
 #include "Tools/DelTraingle/triangle.h"
 #include "Tools/DelTraingle/delaunay.h"
+#include "Tools/MinSpTree/MinSpTree.h"
 #include "DrawDebugHelpers.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -102,7 +103,7 @@ void AProceduralMapsCharacter::SpawnRooms()
 	if (m_SpawningRoom)
 	{
 		for (int i = 0; i < m_TotalRoomsToSpawn; i++)
-		{
+		{ 
 			//spawn
 			FActorSpawnParameters tParams;
 			tParams.Owner = this;
@@ -196,7 +197,7 @@ void AProceduralMapsCharacter::generateDT()
 {
 	dt::Delaunay<double> triangulation;
 	std::vector<dt::Vector2<double>> points;
-	
+
 	for (auto r : m_RoomsMain)
 	{
 		dt::Vector2<double> tmp;
@@ -213,7 +214,7 @@ void AProceduralMapsCharacter::generateDT()
 	FVector2D a, b, c;
 	float z = 600.f;
 	for (auto t : triangles) // for each triangle
-	{	
+	{
 		// get all three rooms
 		m = *(t.a);
 		a = m.vec();
@@ -223,9 +224,9 @@ void AProceduralMapsCharacter::generateDT()
 		c = m.vec();
 
 		// draw line for each Edge
-		DrawDebugLine(GetWorld(), FVector(a, z), FVector(b, z), FColor::Green, true, -1.f, 0, 50);
-		DrawDebugLine(GetWorld(), FVector(a, z), FVector(c, z), FColor::Green, true, -1.f, 0, 50);
-		DrawDebugLine(GetWorld(), FVector(b, z), FVector(c, z), FColor::Green, true, -1.f, 0, 50);
+	//	DrawDebugLine(GetWorld(), FVector(a, z), FVector(b, z), FColor::Black,false, 2.f, 0, 50);
+	//	DrawDebugLine(GetWorld(), FVector(a, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
+	//	DrawDebugLine(GetWorld(), FVector(b, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
 		//DrawCircle(GetWorld(), FVector(a, z), FVector(a, z), FVector(a, z), FColor::Red, 40, 2, true);
 	}
 
@@ -236,15 +237,41 @@ void AProceduralMapsCharacter::generateDT()
 	s = m_RoomLocMap[c];
 	s->testMatChange();*/
 
-	
-
-	for (auto r : m_RoomsMain)
+	// ********************* MST **************************
+	// create minimum spanning tree
+	MinSpTree Mst;
+	for (auto t : triangles) // for each triangle
 	{
-		m.vec(); // conv to vec
-		if (r->m_Loc == m.vec())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Found:"));
-		}
+		// get all three loc and enter Three as apir
+		m = *(t.a);
+		a = m.vec();
+		m = *(t.b);
+		b = m.vec();
+		m = *(t.c);
+		c = m.vec();
+
+		Mst._costPairs.push_back({ FVector2D::Distance(a, b),
+			{a,b} } );
+		Mst._costPairs.push_back({ FVector2D::Distance(a, c),
+			{a,c} });
+		Mst._costPairs.push_back({ FVector2D::Distance(b, b),
+			{b,c} });
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Total pairs in MST: %d"), Mst._costPairs.size());
+
+	auto minPairs = Mst.getMinCostPairs();
+	int mp = minPairs.size();
+	UE_LOG(LogTemp, Warning, TEXT("After MST pairs : %d"), mp);
+	Mst.clear();
+	minPairs = Mst.getNaturalCostPairs(); 
+	UE_LOG(LogTemp, Warning, TEXT("Extra ballancing MST pairs : %d"), minPairs.size()-mp);
+
+	for (auto p : minPairs)
+	{
+		FVector2D a = p.first;
+		FVector2D b = p.second;
+		DrawDebugLine(GetWorld(), FVector(a, z+300), FVector(b, z+300), FColor::Green, true, -1.f, 0, 50);
 	}
 }
 

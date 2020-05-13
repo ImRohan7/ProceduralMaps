@@ -48,7 +48,7 @@ void ARoom::Tick(float DeltaTime)
 		int32 count = 0;
 
 		AActor* a = Cast<AActor>(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
-		auto pLoc = a->GetActorLocation();
+		FVector pLoc(735.0,260.0, 216.0);//a->GetActorLocation();
 		auto selfDistance = FVector::Distance(pLoc, GetActorLocation());
 		
 		for (AActor* room : outRooms)
