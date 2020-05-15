@@ -43,31 +43,7 @@ void ARoom::Tick(float DeltaTime)
 	// with overlapping actors
 	if (m_ToMove)
 	{
-		TSet<AActor*> outRooms;
-		GetOverlappingActors(outRooms, TSubclassOf<ARoom>());
-		int32 count = 0;
-
-		AActor* a = Cast<AActor>(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
-		FVector pLoc(735.0,260.0, 216.0);//a->GetActorLocation();
-		auto selfDistance = FVector::Distance(pLoc, GetActorLocation());
-		
-		for (AActor* room : outRooms)
-		{
-			auto frndLoc = room->GetActorLocation();
-			auto frndDistance = FVector::Distance(pLoc, frndLoc);
-			auto toCheck = selfDistance < frndDistance ? frndLoc : GetActorLocation();
-			auto dir = toCheck - pLoc;
-			dir.Normalize();
-			FVector offset = dir * 5;
-			offset.Z = 0;
-			
-			offset = selfDistance < frndDistance ? offset : -offset;
-			room->AddActorLocalOffset(offset);
-			AddActorLocalOffset(-offset);
-			count++;
-		}
-		//UE_LOG(LogTemp, Warning, TEXT("Room touch : %d"), count);
-		
+		SeparateOverlappingRooms();
 	}
 }
 
@@ -84,6 +60,38 @@ void ARoom::SetSimulatePhysicsForAll(bool state)
 
 void ARoom::OnOverlapBeginCube(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+}
+
+// Move overlapping Rooms.. Return true if there are no overlapping rooms
+bool ARoom::SeparateOverlappingRooms()
+{
+	bool flag = true;
+	TSet<AActor*> outRooms;
+	GetOverlappingActors(outRooms, TSubclassOf<ARoom>());
+	int32 count = 0;
+
+	AActor* a = Cast<AActor>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	FVector pLoc(735.0, 260.0, 216.0);//a->GetActorLocation();
+	auto selfDistance = FVector::Distance(pLoc, GetActorLocation());
+
+	for (AActor* room : outRooms)
+	{
+		flag = false; // if there are any rooms overlapping
+		auto frndLoc = room->GetActorLocation();
+		auto frndDistance = FVector::Distance(pLoc, frndLoc);
+		auto toCheck = selfDistance < frndDistance ? frndLoc : GetActorLocation();
+		auto dir = toCheck - pLoc;
+		dir.Normalize();
+		FVector offset = dir * 5;
+		offset.Z = 0;
+
+		offset = selfDistance < frndDistance ? offset : -offset;
+		room->AddActorLocalOffset(offset);
+		AddActorLocalOffset(-offset);
+		count++;
+	}
+
+	return flag;
 }
 
 void ARoom::Highlight()

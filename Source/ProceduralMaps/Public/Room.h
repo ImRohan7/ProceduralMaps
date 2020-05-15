@@ -43,10 +43,13 @@ public:
 	// visible in variables section
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (DisplayName = "RoomBlockName"))
 		UStaticMeshComponent* MeshCube;
+	
 	// whether to move rooms
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System", meta = (DisplayName = "ToMoveWithCollision"))
 		bool m_ToMove = false;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System", meta = (DisplayName = "ToMoveWithCollision"))
+		bool m_ToSeparate = false;
+
 	// the room scale
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System", meta = (DisplayName = "ScaleOfRoom"))
 		int m_Scale = 0;
@@ -64,6 +67,9 @@ public:
 
 	UFUNCTION() // with this macro u must write the definition of the function
 		void OnOverlapBeginCube(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+
+	bool SeparateOverlappingRooms(); // return true when there are no overlapping rooms
 
 	void Highlight();
 	void testMatChange();

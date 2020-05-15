@@ -94,10 +94,48 @@ void AProceduralMapsCharacter::BeginPlay()
 
 void AProceduralMapsCharacter::Tick(float deltaTime)
 {
+	// run state machine
+	if(m_StartAlgo)
+		RunStates();
+
 }
 
-// spawn rooms
-void AProceduralMapsCharacter::SpawnRooms()
+// simple state machine
+void AProceduralMapsCharacter::RunStates()
+{
+	switch (m_State)
+	{
+	case Pro_States::SpawnRooms:	// 1
+		RunSpawnRoom();
+		break;
+	
+	case Pro_States::SeparateRooms: // 2
+		RunSperateOverlappingRooms();
+		break;
+
+	case Pro_States::HighlightMainRooms: // 3
+		RunHighlightMainRooms();
+		break;
+
+	case Pro_States::DistantiateRooms:
+		RunDistantiateRooms(3.f);
+		break;
+	case Pro_States::DrawDelTriangles:
+
+		break;
+	case Pro_States::DrawMinSpanTree:
+
+		break;
+	case Pro_States::DrawHallWays:
+
+		break;
+	default:
+		break;
+	}
+
+}
+
+void AProceduralMapsCharacter::RunSpawnRoom()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Spawning.............."));
 	if (m_SpawningRoom)
@@ -121,7 +159,6 @@ void AProceduralMapsCharacter::SpawnRooms()
 			FVector scale(scaleX, scaleY,FMath::RandRange(5, 7));
 
 			rm->SetActorScale3D(scale);
-			rm->m_ToMove = true;
 			rm->m_Scale = scaleX + scaleY;
 			m_Rooms.Add(rm);
 		}
@@ -132,25 +169,38 @@ void AProceduralMapsCharacter::SpawnRooms()
 	}
 
 	// set timer for room
-	GetWorldTimerManager().SetTimer(m_TimerGenerateDT, this,
-		&AProceduralMapsCharacter::OnTimerEnd, m_TimeForMoveRooms, false);
-
-	// simulate
-	for (auto rm : m_Rooms)
-	{
-		//if(rm)
-			//rm->SetSimulatePhysicsForAll(true);
-	}
-
+	//GetWorldTimerManager().SetTimer(m_TimerGenerateDT, this,
+		//&AProceduralMapsCharacter::OnTimerEnd, m_TimeForMoveRooms, false);
 	
+	// change state
+	m_State = Pro_States::HighlightMainRooms;
 }
 
-// color main rooms
-void AProceduralMapsCharacter::HighlightMainRooms()
+// sperate overlapping rooms
+void AProceduralMapsCharacter::RunSperateOverlappingRooms()
+{
+	// do until all are separated
+	bool flag = true;
+	
+	for (auto rm : m_Rooms)
+	{
+		if (!rm->SeparateOverlappingRooms())
+		{
+			flag = false;
+		}
+	}
+
+	if (flag) // chnage if all rooms are done separating
+		m_State = Pro_States::HighlightMainRooms;
+}
+
+
+// Highlight main rooms
+void AProceduralMapsCharacter::RunHighlightMainRooms()
 {
 	for (auto rm : m_Rooms)
 	{
-		if (rm->m_Scale > 14 && 1 == rand() % 2)
+		if (rm->m_Scale > 14 && 1 == rand() % 4)
 		{
 			rm->Highlight();	// add
 			rm->m_IsMain = true;
@@ -158,9 +208,9 @@ void AProceduralMapsCharacter::HighlightMainRooms()
 		}
 		else
 		{
-			if (1 != rand() % 3)
+			if (rand() % 5 > 0)
 			{
-				rm->Destroy();
+				//rm->Destroy();
 			}
 			else
 			{
@@ -172,15 +222,22 @@ void AProceduralMapsCharacter::HighlightMainRooms()
 		}
 	}
 
-
 	UE_LOG(LogTemp, Warning, TEXT("Remaining Rooms: %d"), m_RoomsMain.Num());
+	// change state
+	m_State = Pro_States::DistantiateRooms;
+}
+
+// Distantiate rooms with aprticular distance
+void AProceduralMapsCharacter::RunDistantiateRooms(float distacne)
+{
+
 }
 
 // Timer End after moving rooms
 void AProceduralMapsCharacter::OnTimerEnd()
 {
 	// make sure rooms are done moving
-	HighlightMainRooms();
+	RunHighlightMainRooms();
 	// Fill map
 	for (auto r : m_RoomsMain)
 	{
@@ -190,6 +247,13 @@ void AProceduralMapsCharacter::OnTimerEnd()
 	FVector2D g;
 	
 	generateDT();
+}
+
+
+
+bool AProceduralMapsCharacter::MoveAwayWithDistance(float distanceGap)
+{
+	return false;
 }
 
 // generate triangle
@@ -260,18 +324,38 @@ void AProceduralMapsCharacter::generateDT()
 
 	UE_LOG(LogTemp, Warning, TEXT("Total pairs in MST: %d"), Mst._costPairs.size());
 
-	auto minPairs = Mst.getMinCostPairs();
-	int mp = minPairs.size();
+	m_MinPairs = Mst.getMinCostPairs();
+	int mp = m_MinPairs.size();
 	UE_LOG(LogTemp, Warning, TEXT("After MST pairs : %d"), mp);
 	Mst.clear();
-	minPairs = Mst.getNaturalCostPairs(); 
-	UE_LOG(LogTemp, Warning, TEXT("Extra ballancing MST pairs : %d"), minPairs.size()-mp);
+	m_MinPairs = Mst.getNaturalCostPairs();
+	UE_LOG(LogTemp, Warning, TEXT("Extra ballancing MST pairs : %d"), m_MinPairs.size()-mp);
 
-	for (auto p : minPairs)
+	for (auto p : m_MinPairs)
 	{
 		FVector2D a = p.first;
 		FVector2D b = p.second;
-		DrawDebugLine(GetWorld(), FVector(a, z+300), FVector(b, z+300), FColor::Green, true, -1.f, 0, 50);
+		DrawDebugLine(GetWorld(), FVector(a, z+300), FVector(b, z+300), FColor::Green, false, 2.f, 0, 50);
+	}
+
+	DrawHallways();
+}
+
+// Draw hallway lines
+void AProceduralMapsCharacter::DrawHallways()
+{
+	for (auto p : m_MinPairs)
+	{
+		FVector2D a = p.first;
+		FVector2D b = p.second;
+
+		float xDiff = b.X - a.X;
+		float yDiff = a.Y - b.Y;
+		FVector HorizontalEnd(a.X + xDiff, a.Y, 300);
+		FVector VerticalEnd(b.X, b.Y + yDiff, 300);
+
+		DrawDebugLine(GetWorld(), FVector(a, 300), HorizontalEnd, FColor::Blue, true, -1.f, 0, 200);
+		DrawDebugLine(GetWorld(), FVector(b, 300), VerticalEnd, FColor::Blue, true, -1.f, 0, 200);
 	}
 }
 
@@ -282,12 +366,12 @@ void AProceduralMapsCharacter::OnResetVR()
 
 void AProceduralMapsCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
-		Jump();
+	Jump();
 }
 
 void AProceduralMapsCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
-		StopJumping();
+	StopJumping();
 }
 
 void AProceduralMapsCharacter::TurnAtRate(float Rate)

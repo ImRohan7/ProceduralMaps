@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 ///////////////////////////////
 #include "Tools/DelTraingle/vector2.h"
+#include "vector"
+#include "Tools/ProceduralState.h"
 
 #include "ProceduralMapsCharacter.generated.h"
 
@@ -84,6 +86,9 @@ public:
 public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
+		Pro_States m_State = Pro_States::SpawnRooms;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
 		int RoomRange;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
@@ -95,6 +100,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Timer)
 		float m_TimeForMoveRooms;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
+		bool m_StartAlgo = false;
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<ARoom*> m_Rooms;
@@ -102,19 +109,38 @@ public:
 	TArray<ARoom*> m_RoomsMain;
 	// pair with loc and and room for triangle
 	TMap<FVector2D, ARoom*> m_RoomLocMap;
-	
+	// location pairs generated from MinimumSpanning Tree
+	std::vector<std::pair<FVector2D, FVector2D>> m_MinPairs;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ARoom> m_SpawningRoom;
 
-	UFUNCTION(BlueprintCallable)
-		void SpawnRooms();
 
-	UFUNCTION(BlueprintCallable)
-		void HighlightMainRooms();
 
 	UFUNCTION()
 		void OnTimerEnd();
 
+	void RunStates();
+
+	// State func
+	UFUNCTION(BlueprintCallable)
+		void RunSpawnRoom(); // spawn rooms
+
+	UFUNCTION(BlueprintCallable) // select main rooms
+		void RunSperateOverlappingRooms(); // separate rooms
+
+	UFUNCTION(BlueprintCallable) // select main rooms
+		void RunHighlightMainRooms();
+	
+	
+	UFUNCTION(BlueprintCallable) // select main rooms
+		void RunDistantiateRooms(float distance); 
+
+	bool MoveAwayWithDistance(float distanceGap); // return true when having specified distance Gap
+
 	void generateDT();
+
+	void DrawHallways();
+
 };
 

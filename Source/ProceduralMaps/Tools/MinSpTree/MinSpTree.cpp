@@ -63,7 +63,7 @@ vector<pair<FVector2D, FVector2D>> MinSpTree::getNaturalCostPairs()
         }
         else
         {
-            if (3 == (rand() % 6))
+            if (3 == (rand() % 9))
                 res.push_back({a,b});
         }
     }
