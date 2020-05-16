@@ -10,7 +10,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Public/Room.h"
 #include "TimerManager.h"
-
+#include "Engine.h"
 ////////////////////////////////////
 #include "Tools/Generator.h"
 #include "Tools/DelTraingle/vector2.h"
@@ -118,17 +118,21 @@ void AProceduralMapsCharacter::RunStates()
 		break;
 
 	case Pro_States::DistantiateRooms:
-		RunDistantiateRooms(3.f);
+		RunDistantiateRooms(1000.f);
 		break;
+
 	case Pro_States::DrawDelTriangles:
-
+		RunDrawDelTriangles();
 		break;
+
 	case Pro_States::DrawMinSpanTree:
-
+		RunDrawMinSpTree();
 		break;
+
 	case Pro_States::DrawHallWays:
-
+		RunDrawHallways();
 		break;
+
 	default:
 		break;
 	}
@@ -173,12 +177,14 @@ void AProceduralMapsCharacter::RunSpawnRoom()
 		//&AProceduralMapsCharacter::OnTimerEnd, m_TimeForMoveRooms, false);
 	
 	// change state
-	m_State = Pro_States::HighlightMainRooms;
+	m_State = Pro_States::SeparateRooms;
 }
 
 // sperate overlapping rooms
 void AProceduralMapsCharacter::RunSperateOverlappingRooms()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Separating.............."));
+
 	// do until all are separated
 	bool flag = true;
 	
@@ -198,6 +204,8 @@ void AProceduralMapsCharacter::RunSperateOverlappingRooms()
 // Highlight main rooms
 void AProceduralMapsCharacter::RunHighlightMainRooms()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Highlighting.............."));
+
 	for (auto rm : m_Rooms)
 	{
 		if (rm->m_Scale > 14 && 1 == rand() % 4)
@@ -210,7 +218,7 @@ void AProceduralMapsCharacter::RunHighlightMainRooms()
 		{
 			if (rand() % 5 > 0)
 			{
-				//rm->Destroy();
+				rm->Destroy();
 			}
 			else
 			{
@@ -230,7 +238,162 @@ void AProceduralMapsCharacter::RunHighlightMainRooms()
 // Distantiate rooms with aprticular distance
 void AProceduralMapsCharacter::RunDistantiateRooms(float distacne)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Distancing.............."));
 
+	FVector selfLoc, thirdLoc;
+	bool flag = true;
+	//for each rooms if distance lees than given
+	for (auto rm : m_RoomsMain)
+	{
+		selfLoc = rm->GetActorLocation();
+		// check with rm
+		for (auto r : m_RoomsMain)
+		{
+			if (rm != r) // make sure they are not same
+			{
+				thirdLoc = r->GetActorLocation();
+
+				if (FVector::Distance(selfLoc, thirdLoc) < distacne)
+				{
+					flag = false;
+					// move rooms
+					FVector dir = selfLoc - thirdLoc;
+					dir.Normalize();
+					auto offset = dir * 2;
+					rm->AddActorLocalOffset(offset);
+					r->AddActorLocalOffset(-offset);
+				}
+			}
+		}
+	}
+	
+	if (flag)
+		m_State = Pro_States::DrawDelTriangles;
+}
+
+// Draw Deuanay Triangles
+void AProceduralMapsCharacter::RunDrawDelTriangles()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Draw Triangles.............."));
+	for (auto r : m_RoomsMain)
+	{
+		r->updateLocation();
+	}
+	dt::Delaunay<double> triangulation;
+	std::vector<dt::Vector2<double>> points;
+
+	for (auto r : m_RoomsMain)
+	{
+		dt::Vector2<double> tmp;
+		tmp.x = r->m_Loc.X;
+		tmp.y = r->m_Loc.Y;
+		points.push_back(tmp);
+	}
+
+	m_dTriangles = triangulation.triangulate(points);
+	UE_LOG(LogTemp, Warning, TEXT("Total Triangles: %d"), m_dTriangles.size());
+
+	// Draw triangles
+	dt::Vector2<double> m;
+	FVector2D a, b, c;
+	float z = 600.f;
+	for (auto t : m_dTriangles) // for each triangle
+	{
+		// get all three rooms
+		m = *(t.a);
+		a = m.vec();
+		m = *(t.b);
+		b = m.vec();
+		m = *(t.c);
+		c = m.vec();
+
+		// draw line for each Edge
+		DrawDebugLine(GetWorld(), FVector(a, z), FVector(b, z), FColor::Black,false, 2.f, 0, 50);
+		DrawDebugLine(GetWorld(), FVector(a, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
+		DrawDebugLine(GetWorld(), FVector(b, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
+		//DrawCircle(GetWorld(), FVector(a, z), FVector(a, z), FVector(a, z), FColor::Red, 40, 2, true);
+	}
+
+	//ARoom* s = m_RoomLocMap[a];
+	/*s->testMatChange();
+	s = m_RoomLocMap[b];
+	s->testMatChange();
+	s = m_RoomLocMap[c];
+	s->testMatChange();*/
+	//m_State = Pro_States::DrawMinSpanTree;
+	RunDrawMinSpTree();
+}
+
+// Generate and Draw Minimum Spanning Tree
+void AProceduralMapsCharacter::RunDrawMinSpTree()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Draw Min Sp Tree.............."));
+
+	dt::Vector2<double> m;
+	FVector2D aa, bb, cc;
+	float z = 600.f;
+	// ********************* MST **************************
+	// create minimum spanning tree
+	MinSpTree Mst;
+	for (auto t : m_dTriangles) // for each triangle
+	{
+		// get all three loc and enter Three as apir
+		m = *(t.a);
+		aa = m.vec();
+		m = *(t.b);
+		bb = m.vec();
+		m = *(t.c);
+		cc = m.vec();
+		GEngine->AddOnScreenDebugMessage(-1, 50.f, FColor::Orange,
+			FString::Printf(TEXT("My Location is: %s"), *cc.ToString()));
+		Mst._costPairs.push_back({ FVector2D::Distance(aa, bb),
+			{aa,bb} });
+		Mst._costPairs.push_back({ FVector2D::Distance(aa, cc),
+			{aa,cc} });
+		Mst._costPairs.push_back({ FVector2D::Distance(bb, cc),
+			{bb,cc} });
+	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("Total pairs in MST: %d"), Mst._costPairs.size());
+
+	/*m_MinPairs = Mst.getMinCostPairs();
+	int mp = m_MinPairs.size();
+	UE_LOG(LogTemp, Warning, TEXT("After MST 
+	pairs : %d"), mp);
+	Mst.clear();*/
+	m_MinPairs = Mst.getNaturalCostPairs();
+	UE_LOG(LogTemp, Warning, TEXT("Extra ballancing MST pairs : %d"), m_MinPairs.size());
+
+	for (auto p : m_MinPairs)
+	{
+		FVector2D a = p.first;
+		FVector2D b = p.second;
+		DrawDebugLine(GetWorld(), FVector(a, z + 300), FVector(b, z + 300), FColor::Green, false, 4.f, 0, 50);
+	}
+
+	m_State = Pro_States::DrawHallWays;
+}
+
+// Generate and Drwa hallways
+void AProceduralMapsCharacter::RunDrawHallways()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Draw Hallways.............."));
+
+	for (auto p : m_MinPairs)
+	{
+		FVector2D a = p.first;
+		FVector2D b = p.second;
+
+		float xDiff = b.X - a.X;
+		float yDiff = a.Y - b.Y;
+		FVector HorizontalEnd(a.X + xDiff, a.Y, 300);
+		FVector VerticalEnd(b.X, b.Y + yDiff, 300);
+
+		DrawDebugLine(GetWorld(), FVector(a, 300), HorizontalEnd, FColor::Blue, true, -1.f, 0, 200);
+		DrawDebugLine(GetWorld(), FVector(b, 300), VerticalEnd, FColor::Blue, true, -1.f, 0, 200);
+	}
+
+	m_State = Pro_States::None;
 }
 
 // Timer End after moving rooms
@@ -245,118 +408,6 @@ void AProceduralMapsCharacter::OnTimerEnd()
 		m_RoomLocMap.Add(r->m_Loc, r);
 	}
 	FVector2D g;
-	
-	generateDT();
-}
-
-
-
-bool AProceduralMapsCharacter::MoveAwayWithDistance(float distanceGap)
-{
-	return false;
-}
-
-// generate triangle
-void AProceduralMapsCharacter::generateDT()
-{
-	dt::Delaunay<double> triangulation;
-	std::vector<dt::Vector2<double>> points;
-
-	for (auto r : m_RoomsMain)
-	{
-		dt::Vector2<double> tmp;
-		tmp.x = r->m_Loc.X;
-		tmp.y = r->m_Loc.Y;
-		points.push_back(tmp);
-	}
-
-	const std::vector<dt::Triangle<double>> triangles = triangulation.triangulate(points);
-	UE_LOG(LogTemp, Warning, TEXT("Total Triangles: %d"), triangles.size());
-
-	// Draw triangles
-	dt::Vector2<double> m;
-	FVector2D a, b, c;
-	float z = 600.f;
-	for (auto t : triangles) // for each triangle
-	{
-		// get all three rooms
-		m = *(t.a);
-		a = m.vec();
-		m = *(t.b);
-		b = m.vec();
-		m = *(t.c);
-		c = m.vec();
-
-		// draw line for each Edge
-	//	DrawDebugLine(GetWorld(), FVector(a, z), FVector(b, z), FColor::Black,false, 2.f, 0, 50);
-	//	DrawDebugLine(GetWorld(), FVector(a, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
-	//	DrawDebugLine(GetWorld(), FVector(b, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
-		//DrawCircle(GetWorld(), FVector(a, z), FVector(a, z), FVector(a, z), FColor::Red, 40, 2, true);
-	}
-
-	ARoom* s = m_RoomLocMap[a];
-	/*s->testMatChange();
-	s = m_RoomLocMap[b];
-	s->testMatChange();
-	s = m_RoomLocMap[c];
-	s->testMatChange();*/
-
-	// ********************* MST **************************
-	// create minimum spanning tree
-	MinSpTree Mst;
-	for (auto t : triangles) // for each triangle
-	{
-		// get all three loc and enter Three as apir
-		m = *(t.a);
-		a = m.vec();
-		m = *(t.b);
-		b = m.vec();
-		m = *(t.c);
-		c = m.vec();
-
-		Mst._costPairs.push_back({ FVector2D::Distance(a, b),
-			{a,b} } );
-		Mst._costPairs.push_back({ FVector2D::Distance(a, c),
-			{a,c} });
-		Mst._costPairs.push_back({ FVector2D::Distance(b, b),
-			{b,c} });
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Total pairs in MST: %d"), Mst._costPairs.size());
-
-	m_MinPairs = Mst.getMinCostPairs();
-	int mp = m_MinPairs.size();
-	UE_LOG(LogTemp, Warning, TEXT("After MST pairs : %d"), mp);
-	Mst.clear();
-	m_MinPairs = Mst.getNaturalCostPairs();
-	UE_LOG(LogTemp, Warning, TEXT("Extra ballancing MST pairs : %d"), m_MinPairs.size()-mp);
-
-	for (auto p : m_MinPairs)
-	{
-		FVector2D a = p.first;
-		FVector2D b = p.second;
-		DrawDebugLine(GetWorld(), FVector(a, z+300), FVector(b, z+300), FColor::Green, false, 2.f, 0, 50);
-	}
-
-	DrawHallways();
-}
-
-// Draw hallway lines
-void AProceduralMapsCharacter::DrawHallways()
-{
-	for (auto p : m_MinPairs)
-	{
-		FVector2D a = p.first;
-		FVector2D b = p.second;
-
-		float xDiff = b.X - a.X;
-		float yDiff = a.Y - b.Y;
-		FVector HorizontalEnd(a.X + xDiff, a.Y, 300);
-		FVector VerticalEnd(b.X, b.Y + yDiff, 300);
-
-		DrawDebugLine(GetWorld(), FVector(a, 300), HorizontalEnd, FColor::Blue, true, -1.f, 0, 200);
-		DrawDebugLine(GetWorld(), FVector(b, 300), VerticalEnd, FColor::Blue, true, -1.f, 0, 200);
-	}
 }
 
 void AProceduralMapsCharacter::OnResetVR()

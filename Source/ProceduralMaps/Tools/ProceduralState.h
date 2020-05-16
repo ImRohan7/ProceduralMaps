@@ -15,5 +15,5 @@ enum class Pro_States : uint8
 	DrawDelTriangles = 4  UMETA(DisplayName = "Draw Delaunay Triangles"),
 	DrawMinSpanTree = 5  UMETA(DisplayName = "Draw Minimum Spanning Tree"),
 	DrawHallWays = 6  UMETA(DisplayName = "Draw Hallways"),
-	
+	None = 7
 };

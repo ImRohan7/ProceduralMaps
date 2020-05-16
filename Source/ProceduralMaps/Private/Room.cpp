@@ -43,7 +43,7 @@ void ARoom::Tick(float DeltaTime)
 	// with overlapping actors
 	if (m_ToMove)
 	{
-		SeparateOverlappingRooms();
+		//SeparateOverlappingRooms();
 	}
 }
 

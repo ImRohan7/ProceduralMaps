@@ -8,6 +8,7 @@
 #include "Tools/DelTraingle/vector2.h"
 #include "vector"
 #include "Tools/ProceduralState.h"
+#include "Tools/DelTraingle/triangle.h"
 
 #include "ProceduralMapsCharacter.generated.h"
 
@@ -112,9 +113,10 @@ public:
 	// location pairs generated from MinimumSpanning Tree
 	std::vector<std::pair<FVector2D, FVector2D>> m_MinPairs;
 
+	std::vector<dt::Triangle<double>> m_dTriangles;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ARoom> m_SpawningRoom;
-
 
 
 	UFUNCTION()
@@ -132,15 +134,17 @@ public:
 	UFUNCTION(BlueprintCallable) // select main rooms
 		void RunHighlightMainRooms();
 	
-	
 	UFUNCTION(BlueprintCallable) // select main rooms
 		void RunDistantiateRooms(float distance); 
 
-	bool MoveAwayWithDistance(float distanceGap); // return true when having specified distance Gap
+	UFUNCTION(BlueprintCallable) // select main rooms
+		void RunDrawDelTriangles();
 
-	void generateDT();
+	UFUNCTION(BlueprintCallable) // select main rooms
+		void RunDrawMinSpTree();
 
-	void DrawHallways();
+	UFUNCTION(BlueprintCallable) // select main rooms
+		void RunDrawHallways();
 
 };
 
