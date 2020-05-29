@@ -16,7 +16,6 @@
 #include "Tools/DelTraingle/vector2.h"
 #include "Tools/DelTraingle/triangle.h"
 #include "Tools/DelTraingle/delaunay.h"
-#include "Tools/MinSpTree/MinSpTree.h"
 #include "DrawDebugHelpers.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -96,12 +95,12 @@ void AProceduralMapsCharacter::Tick(float deltaTime)
 {
 	// run state machine
 	if(m_StartAlgo)
-		RunStates();
+		RunStates(deltaTime);
 
 }
 
 // simple state machine
-void AProceduralMapsCharacter::RunStates()
+void AProceduralMapsCharacter::RunStates(float deltaTime)
 {
 	switch (m_State)
 	{
@@ -118,19 +117,28 @@ void AProceduralMapsCharacter::RunStates()
 		break;
 
 	case Pro_States::DistantiateRooms:
-		RunDistantiateRooms(1000.f);
+		RunDistantiateRooms(m_MinDist);
 		break;
 
 	case Pro_States::DrawDelTriangles:
-		RunDrawDelTriangles();
+		RunDrawDelTriangles(); // break
 		break;
 
-	case Pro_States::DrawMinSpanTree:
+	case Pro_States::DrawMinSpanTree: // break
 		RunDrawMinSpTree();
 		break;
 
-	case Pro_States::DrawHallWays:
+	case Pro_States::DrawHallWays: 
 		RunDrawHallways();
+		break;
+
+	case Pro_States::Waiting:
+		m_Timer += deltaTime;
+		if (m_Timer >= m_TimeToWait)
+		{
+			m_State = m_PrevState; // restore state
+			m_Timer = 0.f;
+		}
 		break;
 
 	default:
@@ -291,6 +299,7 @@ void AProceduralMapsCharacter::RunDrawDelTriangles()
 	}
 
 	m_dTriangles = triangulation.triangulate(points);
+	m_cTriangles = m_dTriangles;
 	UE_LOG(LogTemp, Warning, TEXT("Total Triangles: %d"), m_dTriangles.size());
 
 	// Draw triangles
@@ -308,20 +317,21 @@ void AProceduralMapsCharacter::RunDrawDelTriangles()
 		c = m.vec();
 
 		// draw line for each Edge
-		DrawDebugLine(GetWorld(), FVector(a, z), FVector(b, z), FColor::Black,false, 2.f, 0, 50);
-		DrawDebugLine(GetWorld(), FVector(a, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
-		DrawDebugLine(GetWorld(), FVector(b, z), FVector(c, z), FColor::Black,false, 2.f, 0, 50);
+		DrawDebugLine(GetWorld(), FVector(a, z), FVector(b, z), FColor::Black,false, m_TimeToWait, 0, 50);
+		DrawDebugLine(GetWorld(), FVector(a, z), FVector(c, z), FColor::Black,false, m_TimeToWait, 0, 50);
+		DrawDebugLine(GetWorld(), FVector(b, z), FVector(c, z), FColor::Black,false, m_TimeToWait, 0, 50);
 		//DrawCircle(GetWorld(), FVector(a, z), FVector(a, z), FVector(a, z), FColor::Red, 40, 2, true);
+		
+		Mst._costPairs.push_back({ FVector2D::Distance(a, b),
+			{a,b} });
+		Mst._costPairs.push_back({ FVector2D::Distance(a, c),
+			{a,c} });
+		Mst._costPairs.push_back({ FVector2D::Distance(b, c),
+			{b,c} });
 	}
 
-	//ARoom* s = m_RoomLocMap[a];
-	/*s->testMatChange();
-	s = m_RoomLocMap[b];
-	s->testMatChange();
-	s = m_RoomLocMap[c];
-	s->testMatChange();*/
-	//m_State = Pro_States::DrawMinSpanTree;
-	RunDrawMinSpTree();
+	m_PrevState = Pro_States::DrawMinSpanTree;
+	m_State = Pro_States::Waiting;
 }
 
 // Generate and Draw Minimum Spanning Tree
@@ -329,30 +339,29 @@ void AProceduralMapsCharacter::RunDrawMinSpTree()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Draw Min Sp Tree.............."));
 
-	dt::Vector2<double> m;
-	FVector2D aa, bb, cc;
+	//dt::Vector2<double> ma;
+	//FVector2D aa, bb, cc;
 	float z = 600.f;
-	// ********************* MST **************************
-	// create minimum spanning tree
-	MinSpTree Mst;
-	for (auto t : m_dTriangles) // for each triangle
-	{
-		// get all three loc and enter Three as apir
-		m = *(t.a);
-		aa = m.vec();
-		m = *(t.b);
-		bb = m.vec();
-		m = *(t.c);
-		cc = m.vec();
-		GEngine->AddOnScreenDebugMessage(-1, 50.f, FColor::Orange,
-			FString::Printf(TEXT("My Location is: %s"), *cc.ToString()));
-		Mst._costPairs.push_back({ FVector2D::Distance(aa, bb),
-			{aa,bb} });
-		Mst._costPairs.push_back({ FVector2D::Distance(aa, cc),
-			{aa,cc} });
-		Mst._costPairs.push_back({ FVector2D::Distance(bb, cc),
-			{bb,cc} });
-	}
+	//// ********************* MST **************************
+	//// create minimum spanning tree
+	//for (auto t : m_cTriangles) // for each triangle
+	//{
+	//	// get all three loc and enter Three as apir
+	//	ma = *(t.a);
+	//	aa = ma.vec();
+	//	ma = *(t.b);
+	//	bb = ma.vec();
+	//	ma = *(t.c);
+	//	cc = ma.vec();
+	//	GEngine->AddOnScreenDebugMessage(-1, 50.f, FColor::Orange,
+	//		FString::Printf(TEXT("My Location is: %s"), *cc.ToString()));
+	//	Mst._costPairs.push_back({ FVector2D::Distance(aa, bb),
+	//		{aa,bb} });
+	//	Mst._costPairs.push_back({ FVector2D::Distance(aa, cc),
+	//		{aa,cc} });
+	//	Mst._costPairs.push_back({ FVector2D::Distance(bb, cc),
+	//		{bb,cc} });
+	//}
 	
 	UE_LOG(LogTemp, Warning, TEXT("Total pairs in MST: %d"), Mst._costPairs.size());
 
@@ -368,10 +377,11 @@ void AProceduralMapsCharacter::RunDrawMinSpTree()
 	{
 		FVector2D a = p.first;
 		FVector2D b = p.second;
-		DrawDebugLine(GetWorld(), FVector(a, z + 300), FVector(b, z + 300), FColor::Green, false, 4.f, 0, 50);
+		DrawDebugLine(GetWorld(), FVector(a, z + 300), FVector(b, z + 300), FColor::Green, false, m_TimeToWait, 0, 50);
 	}
 
-	m_State = Pro_States::DrawHallWays;
+	m_PrevState = Pro_States::DrawHallWays;
+	m_State = Pro_States::Waiting;
 }
 
 // Generate and Drwa hallways
@@ -392,7 +402,7 @@ void AProceduralMapsCharacter::RunDrawHallways()
 		DrawDebugLine(GetWorld(), FVector(a, 300), HorizontalEnd, FColor::Blue, true, -1.f, 0, 200);
 		DrawDebugLine(GetWorld(), FVector(b, 300), VerticalEnd, FColor::Blue, true, -1.f, 0, 200);
 	}
-
+	m_Hallways = m_MinPairs.size();
 	m_State = Pro_States::None;
 }
 

@@ -9,6 +9,7 @@
 #include "vector"
 #include "Tools/ProceduralState.h"
 #include "Tools/DelTraingle/triangle.h"
+#include "Tools/MinSpTree/MinSpTree.h"
 
 #include "ProceduralMapsCharacter.generated.h"
 
@@ -106,23 +107,48 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<ARoom*> m_Rooms;
+	
 	// main rooms
-	TArray<ARoom*> m_RoomsMain;
-	// pair with loc and and room for triangle
-	TMap<FVector2D, ARoom*> m_RoomLocMap;
-	// location pairs generated from MinimumSpanning Tree
-	std::vector<std::pair<FVector2D, FVector2D>> m_MinPairs;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Room)
+		TArray<ARoom*> m_RoomsMain;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Algo)
+		float m_MinDist = 1000.f;
 
-	std::vector<dt::Triangle<double>> m_dTriangles;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Algo)
+		float m_MaxDist;
+
+	// location pairs generated from MinimumSpanning Tree
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Algo)
+		int m_Hallways; // number of Hallways
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ARoom> m_SpawningRoom;
+		TSubclassOf<class ARoom> m_SpawningRoom;
 
+	// pair with loc and and room for triangle
+	TMap<FVector2D, ARoom*> m_RoomLocMap;
+	
+#pragma region Timer
+	Pro_States m_PrevState = Pro_States::None;
+	float m_TimeToWait = 3.f;
+	float m_Timer = 0.f;
+#pragma endregion
+
+	std::vector<std::pair<FVector2D, FVector2D>> m_MinPairs; 
+
+	std::vector<dt::Triangle<double>> m_dTriangles;
+	std::vector<dt::Triangle<double>> m_cTriangles;
+	MinSpTree Mst;
+
+
+	/*
+	**********	FUNCTIONS	************
+	*/
 
 	UFUNCTION()
 		void OnTimerEnd();
 
-	void RunStates();
+	void RunStates(float deltaTime);
 
 	// State func
 	UFUNCTION(BlueprintCallable)
