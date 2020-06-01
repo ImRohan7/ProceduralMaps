@@ -338,38 +338,10 @@ void AProceduralMapsCharacter::RunDrawDelTriangles()
 void AProceduralMapsCharacter::RunDrawMinSpTree()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Draw Min Sp Tree.............."));
-
-	//dt::Vector2<double> ma;
-	//FVector2D aa, bb, cc;
 	float z = 600.f;
-	//// ********************* MST **************************
-	//// create minimum spanning tree
-	//for (auto t : m_cTriangles) // for each triangle
-	//{
-	//	// get all three loc and enter Three as apir
-	//	ma = *(t.a);
-	//	aa = ma.vec();
-	//	ma = *(t.b);
-	//	bb = ma.vec();
-	//	ma = *(t.c);
-	//	cc = ma.vec();
-	//	GEngine->AddOnScreenDebugMessage(-1, 50.f, FColor::Orange,
-	//		FString::Printf(TEXT("My Location is: %s"), *cc.ToString()));
-	//	Mst._costPairs.push_back({ FVector2D::Distance(aa, bb),
-	//		{aa,bb} });
-	//	Mst._costPairs.push_back({ FVector2D::Distance(aa, cc),
-	//		{aa,cc} });
-	//	Mst._costPairs.push_back({ FVector2D::Distance(bb, cc),
-	//		{bb,cc} });
-	//}
 	
 	UE_LOG(LogTemp, Warning, TEXT("Total pairs in MST: %d"), Mst._costPairs.size());
 
-	/*m_MinPairs = Mst.getMinCostPairs();
-	int mp = m_MinPairs.size();
-	UE_LOG(LogTemp, Warning, TEXT("After MST 
-	pairs : %d"), mp);
-	Mst.clear();*/
 	m_MinPairs = Mst.getNaturalCostPairs();
 	UE_LOG(LogTemp, Warning, TEXT("Extra ballancing MST pairs : %d"), m_MinPairs.size());
 
@@ -404,6 +376,7 @@ void AProceduralMapsCharacter::RunDrawHallways()
 	}
 	m_Hallways = m_MinPairs.size();
 	m_State = Pro_States::None;
+	
 }
 
 // Timer End after moving rooms

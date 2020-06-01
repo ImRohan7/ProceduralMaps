@@ -84,6 +84,7 @@ bool ARoom::SeparateOverlappingRooms()
 		dir.Normalize();
 		FVector offset = dir * 5;
 		offset.Z = 0;
+		offset.X /= 2;
 
 		offset = selfDistance < frndDistance ? offset : -offset;
 		room->AddActorLocalOffset(offset);
