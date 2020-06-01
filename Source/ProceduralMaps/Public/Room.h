@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 ///////////////////////////////
-
 #include "Room.generated.h"
 
 class UPrimitiveComponent;
@@ -18,19 +17,12 @@ class PROCEDURALMAPS_API ARoom : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ARoom();
-
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
-//	UPROPERTY(VisibleAnywhere) // visible in component hierarchy
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (DisplayName = "Location Scene Coponent"))
 		USceneComponent* SceneComponent;
 
@@ -44,6 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (DisplayName = "RoomBlockName"))
 		UStaticMeshComponent* MeshCube;
 	
+//	UPROPERTY(VisibleAnywhere) // visible in component hierarchy
 	// whether to move rooms
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "System", meta = (DisplayName = "ToMoveWithCollision"))
 		bool m_ToMove = false;
@@ -75,9 +68,5 @@ public:
 	void testMatChange();
 	void updateLocation();
 
-//		void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent,AActor* OtherActor,UPrimitiveComponent* OtherComp,
-	//		int OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-//	void OnOverlap(AActor* MyOverlappedActor, AActor* OtherActor);
 
 };

@@ -154,25 +154,24 @@ void AProceduralMapsCharacter::RunSpawnRoom()
 	{
 		for (int i = 0; i < m_TotalRoomsToSpawn; i++)
 		{ 
-			//spawn
+			//spawning params
 			FActorSpawnParameters tParams;
 			tParams.Owner = this;
 			FRotator rot;
-			//FVector loc = GetActorLocation() + GetActorForwardVector() * 30;
 			FVector loc = GetActorLocation() + Helpers::Generator::getRandomPointInCircle(500);
 			loc.Z = 226.f;
 			rot = FRotator::ZeroRotator;
+			// Spawn Actor
 			ARoom* rm = GetWorld()->SpawnActor<ARoom>(m_SpawningRoom, loc, rot, tParams);
 
 			int scaleX = FMath::RandRange(4, RoomRange);
 			int scaleY = FMath::RandRange(4, RoomRange);
-
-			// random scale
+			// random scale vector
 			FVector scale(scaleX, scaleY,FMath::RandRange(5, 7));
 
-			rm->SetActorScale3D(scale);
-			rm->m_Scale = scaleX + scaleY;
-			m_Rooms.Add(rm);
+			rm->SetActorScale3D(scale); // set relative scale
+			rm->m_Scale = scaleX + scaleY; // for the sake of reading in next steps
+			m_Rooms.Add(rm); // add to TArray<ARoom*> Container
 		}
 	}
 	else // impoertant Error Logging
